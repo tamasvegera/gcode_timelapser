@@ -22,15 +22,32 @@ while True:
     if not line:
         break
 
-    if "G1" in line:
-        last_g1 = line
+    if ("G1" in line or "G0" in line) and ("X" in line or "Y" in line):
+        temp_line = line.split(" X")[1]
+        if " " in temp_line:
+            last_x_pos = float(temp_line[:temp_line.find(" ")])
+        else:
+            last_x_pos = float(temp_line[:temp_line.find("\n")])
+
+        temp_line = line.split(" Y")[1]
+        if " " in temp_line:
+            last_y_pos = float(temp_line[:temp_line.find(" ")])
+        else:
+            last_y_pos = float(temp_line[:temp_line.find("\n")])
+
+    if ";" not in line and "E" in line and "G1" in line:
+        temp_line = line.split(" E")[1]
+        if " " in temp_line:
+            last_e_pos = float(temp_line[:temp_line.find(" ")])
+        else:
+            last_e_pos = float(temp_line[:temp_line.find("\n")])
+        #last_e_pos = float(line[(line.find("E") + 1):])
 
     if ";LAYER:" in line and ";LAYER:0" not in line:
         g_new.write(";TimeLapse\n")
 
         # RETRACT
-        last_extruder_pos = float(last_g1[(last_g1.find("E") + 1):])
-        retracted_extruder = str(round(last_extruder_pos - retract_length, 5))
+        retracted_extruder = str(round(last_e_pos - retract_length, 5))
         g_new.write("G1 F4200 E" + retracted_extruder + "\n")
 
         # parking
@@ -41,9 +58,9 @@ while True:
         g_new.write("G4 P" + str(shutter_time) + " ;Wait for shutter\n")
 
         # back to prev pos
-        g_new.write(last_g1.split(" E")[0] + "\n")      # write only before E part
+        g_new.write("G1 F9000 X" + str(last_x_pos) + " Y" + str(last_y_pos) + "\n")
 
         # unretract
-        g_new.write("G1 F4200 E" + str(last_extruder_pos) + "\n")
+        g_new.write("G1 F4200 E" + str(last_e_pos) + "\n")
 
     g_new.write(line)
